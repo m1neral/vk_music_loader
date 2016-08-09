@@ -1,3 +1,13 @@
 .idea
 .vk_auth_data
 audio
+
+/.bundle/
+/.yardoc
+/Gemfile.lock
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
