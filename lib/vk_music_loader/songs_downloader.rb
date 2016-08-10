@@ -32,7 +32,7 @@ module VkMusicLoader
 
       songs.each do |song|
         song_url = URI.parse(song['url'])
-        file_name = "#{song['artist']} - #{song['title']}.mp3"
+        file_name = "#{song['artist']} - #{song['title']}.mp3".gsub(/[\x00\/\\:\*\?\"<>\|]/, '_')
         file_path = "#{audio_folder_path}/#{file_name}"
 
         unless File.file?(file_path)
