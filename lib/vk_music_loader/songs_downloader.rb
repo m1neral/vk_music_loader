@@ -1,5 +1,10 @@
 module VkMusicLoader
   class SongsDownloader
+    API_AUDIO_GET_PATH = 'https://api.vk.com/method/audio.get'
+    QUERY_PARAMS = {
+        v: '5.50'
+    }
+
     def initialize(auth_token, user_id, audio_folder_path)
       @auth_token = auth_token
       @user_id = user_id
@@ -7,20 +12,34 @@ module VkMusicLoader
     end
 
     def perform
-      download_songs(get_playlist(auth_token))
+      download_songs(get_playlist)
     end
 
     private
 
     attr_reader :auth_token, :user_id, :audio_folder_path
 
-    def get_playlist(auth_token)
-      http = Net::HTTP.new('api.vk.com', 443)
+    def query_params
+      QUERY_PARAMS.merge(owner_id: user_id, access_token: auth_token)
+    end
+
+    def build_uri
+      uri = URI(API_AUDIO_GET_PATH)
+      uri.query = URI.encode_www_form(query_params)
+      uri
+    end
+
+    def build_http(uri)
+      http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      http
+    end
 
-      req = Net::HTTP::Get.new("https://api.vk.com/method/audio.get?owner_id=#{user_id}&v=5.50&access_token=#{auth_token}")
-      res = http.request(req)
+    def get_playlist
+      uri = build_uri
+      req = Net::HTTP::Get.new(uri)
+      res = build_http(uri).request(req)
 
       JSON.parse(res.body)
     end
