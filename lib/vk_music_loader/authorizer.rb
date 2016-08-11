@@ -1,6 +1,6 @@
 module VkMusicLoader
   class Authorizer
-    AUTH_FILE_PATH = File.expand_path('~') + '/.vk_auth_data'
+    AUTH_FILE_PATH = File.expand_path('~') + '/.vk_music_loader/auth_data'
 
     AUTHORIZE_API_PATH = 'https://oauth.vk.com/authorize'
     QUERY_PARAMS = {
@@ -42,6 +42,10 @@ module VkMusicLoader
 
     def save_auth_params_to_file
       auth_params = get_auth_params_from_browser_bar(build_uri)
+
+      dir_path = File.dirname(AUTH_FILE_PATH)
+      Dir.mkdir(dir_path) unless File.exists?(dir_path)
+
       auth_file = File.open(AUTH_FILE_PATH, 'w')
       auth_file.puts(Time.new + auth_params['expires_in'].first.to_i)
       auth_file.puts(auth_params['access_token'].first)

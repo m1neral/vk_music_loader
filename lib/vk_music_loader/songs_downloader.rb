@@ -12,7 +12,13 @@ module VkMusicLoader
     end
 
     def perform
-      download_songs(get_playlist)
+      playlist = get_playlist
+
+      if playlist['error']
+        puts playlist['error']['error_msg']
+      else
+        download_songs(playlist)
+      end
     end
 
     private

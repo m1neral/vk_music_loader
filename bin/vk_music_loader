@@ -2,10 +2,4 @@
 
 require 'vk_music_loader'
 
-opts = Slop.parse do |o|
-  o.integer 'app', '-app', '--app', '-application', '-application', default: 5377636 # author's application (you can use it)
-  o.integer 'id', '-id', '--id', '-user-id', '--user-id', '-group-id', '--group-id'
-  o.string 'folder', '-folder', '--folder', 'path', '-path', '--path', default: 'audio'
-end
-
-VkMusicLoader.call(opts)
+VkMusicLoader.call
