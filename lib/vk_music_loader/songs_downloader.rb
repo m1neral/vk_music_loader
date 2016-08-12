@@ -1,36 +1,57 @@
 module VkMusicLoader
   class SongsDownloader
-    API_AUDIO_GET_PATH = 'https://api.vk.com/method/audio.get'
-    QUERY_PARAMS = {
-        v: '5.50'
+    API_AUDIO_METHOD_PATHS = {
+        get: 'https://api.vk.com/method/audio.get',
+        search: 'https://api.vk.com/method/audio.search'
     }
 
-    def initialize(auth_token, user_id, audio_folder_path)
+    QUERY_PARAMS = {
+        v: '5.53'
+    }
+
+    def initialize(auth_token, opts)
       @auth_token = auth_token
-      @user_id = user_id
-      @audio_folder_path = audio_folder_path
+      @opts = opts
     end
 
     def perform
-      playlist = get_playlist
+      raw_playlist = get_raw_playlist
 
-      if playlist['error']
-        puts playlist['error']['error_msg']
+      if raw_playlist['error']
+        puts raw_playlist['error']['error_msg']
       else
-        download_songs(playlist)
+        download_songs(get_milled_playlist(raw_playlist))
       end
     end
 
     private
 
-    attr_reader :auth_token, :user_id, :audio_folder_path
+    attr_reader :auth_token, :opts
 
     def query_params
-      QUERY_PARAMS.merge(owner_id: user_id, access_token: auth_token)
+      merged_query_params = QUERY_PARAMS.merge(access_token: auth_token)
+      merged_query_params[:owner_id] = opts[:id] unless opts[:query]
+      merged_query_params[:q] = opts[:query] unless opts[:id]
+
+      if opts[:random]
+        merged_query_params[:count] = 300
+      elsif opts[:count]
+        merged_query_params[:count] = opts[:count]
+      end
+
+      merged_query_params
+    end
+
+    def audio_method_path
+      if opts[:id]
+        API_AUDIO_METHOD_PATHS[:get]
+      elsif opts[:query]
+        API_AUDIO_METHOD_PATHS[:search]
+      end
     end
 
     def build_uri
-      uri = URI(API_AUDIO_GET_PATH)
+      uri = URI(audio_method_path)
       uri.query = URI.encode_www_form(query_params)
       uri
     end
@@ -42,7 +63,7 @@ module VkMusicLoader
       http
     end
 
-    def get_playlist
+    def get_raw_playlist
       uri = build_uri
       req = Net::HTTP::Get.new(uri)
       res = build_http(uri).request(req)
@@ -50,25 +71,37 @@ module VkMusicLoader
       JSON.parse(res.body)
     end
 
+    def get_milled_playlist(raw_playlist)
+      songs = raw_playlist['response']['items']
+      songs_count = opts[:count] || songs.count
+
+      opts[:random] ? songs.sample(songs_count) : songs
+    end
+
     def download_songs(playlist)
-      Dir.mkdir(audio_folder_path) unless File.exists?(audio_folder_path)
+      Dir.mkdir(opts[:folder]) unless File.exists?(opts[:folder])
 
-      songs = playlist['response']['items']
+      downloads_count = 0
 
-      songs.each do |song|
+      playlist.each do |song|
         song_url = URI.parse(song['url'])
-        file_name = "#{song['artist']} - #{song['title']}.mp3".gsub(/[\x00\/\\:\*\?\"<>\|]/, '_')
-        file_path = "#{audio_folder_path}/#{file_name}"
+        file_name = "#{song['artist']} - #{song['title']}".slice(0, 100).gsub(/[\x00\/\\:\*\?\"<>\|]/, '_') + '.mp3'
+        file_path = "#{opts[:folder]}/#{file_name}"
 
         unless File.file?(file_path)
           File.open(file_path, 'w') do |f|
             f.write Net::HTTP.get(song_url)
             f.close
 
+            downloads_count += 1
             puts "Downloaded: #{file_name}"
           end
         end
       end
+
+      puts "-----> Downloaded #{downloads_count} songs in #{opts[:folder]}"
+      puts "-----> The other #{playlist.count - downloads_count} songs have been already downloaded" if
+          playlist.count - downloads_count > 0
     end
   end
 end
