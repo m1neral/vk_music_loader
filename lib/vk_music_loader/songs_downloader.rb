@@ -32,12 +32,8 @@ module VkMusicLoader
       merged_query_params = QUERY_PARAMS.merge(access_token: auth_token)
       merged_query_params[:owner_id] = opts[:id] unless opts[:query]
       merged_query_params[:q] = opts[:query] unless opts[:id]
-
-      if opts[:random]
-        merged_query_params[:count] = 300
-      elsif opts[:count]
-        merged_query_params[:count] = opts[:count]
-      end
+      merged_query_params[:count] = 300 if opts[:query]
+      # In other cases, do not set the number of audios, because bug: https://new.vk.com/bugs?act=show&id=5502832_1
 
       merged_query_params
     end
@@ -75,7 +71,7 @@ module VkMusicLoader
       songs = raw_playlist['response']['items']
       songs_count = opts[:count] || songs.count
 
-      opts[:random] ? songs.sample(songs_count) : songs
+      opts[:random] ? songs.sample(songs_count) : songs.take(songs_count)
     end
 
     def download_songs(playlist)
