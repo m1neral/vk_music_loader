@@ -17,6 +17,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency('launchy', '~> 2.0')
-  spec.add_dependency('slop', '~> 4.0')
+  spec.add_dependency('slop', '~> 4.4')
   spec.executables   << 'vk_music_loader'
 end
