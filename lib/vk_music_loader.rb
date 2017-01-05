@@ -8,7 +8,6 @@ require 'net/http'
 require 'openssl'
 require 'json'
 require 'slop'
-require 'launchy'
 
 require 'vk_music_loader/authorizer'
 require 'vk_music_loader/songs_downloader'
@@ -17,7 +16,7 @@ module VkMusicLoader
   def self.call
     begin
       opts = Slop.parse uppress_errors: true do |o|
-        o.integer 'app', '-app', '--app', '-application', '-application', default: 5377636 # author's application (you can use it)
+        o.string 'key', '-key', '--key', '-k'
         o.integer 'id', '-id', '--id', '-user-id', '--user-id', '-group-id', '--group-id'
         o.string 'query', '-query', '--query', '-q', 'search', '-search', '--search'
         o.integer 'count', '-count', '--count', 'c', '-c', '--c'

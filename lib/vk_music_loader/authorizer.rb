@@ -2,16 +2,20 @@ module VkMusicLoader
   class Authorizer
     AUTH_FILE_PATH = File.expand_path('~') + '/.vk_music_loader/auth_data'
 
-    AUTHORIZE_API_PATH = 'https://oauth.vk.com/authorize'
-    QUERY_PARAMS = {
-        scope: 'audio',
-        redirect_uri: 'http://oauth.vk.com/blank.html',
-        display: 'page',
-        response_type: 'token'
-    }
+    API_CHECK_AUDIO_METHOD_PATH = 'http://api.xn--41a.ws/api.php'
 
-    def initialize(app_id)
-      @app_id = app_id
+    def initialize(auth_key = nil)
+      @auth_key = auth_key
+    end
+
+    def self.auth_key_valid?(auth_key)
+      uri = URI(API_CHECK_AUDIO_METHOD_PATH)
+      uri.query = URI.encode_www_form(key: auth_key, method: :by_owner, owner_id: :dummy)
+
+      req = Net::HTTP::Get.new(uri)
+      res = Net::HTTP.new(uri.host, uri.port).request(req)
+
+      res.body != 'wrong key' && res.body != 'key wrong format'
     end
 
     def perform
@@ -20,60 +24,42 @@ module VkMusicLoader
 
     private
 
-    attr_reader :app_id
+    attr_reader :auth_key
 
-    def query_params
-      QUERY_PARAMS.merge(client_id: app_id)
-    end
-
-    def build_uri
-      uri = URI(AUTHORIZE_API_PATH)
-      uri.query = URI.encode_www_form(query_params)
-      uri
-    end
-
-    def get_auth_params_from_browser_bar(uri)
-      ARGV.clear
-
-      Launchy.open(uri)
-      puts 'Paste full URL from browser bar and press ENTER: '
-      CGI.parse(URI(gets.chomp.strip).fragment)
-    end
-
-    def save_auth_params_to_file
-      auth_params = get_auth_params_from_browser_bar(build_uri)
-
+    def save_auth_params_to_file(auth_key)
       dir_path = File.dirname(AUTH_FILE_PATH)
       Dir.mkdir(dir_path) unless File.exists?(dir_path)
 
       auth_file = File.open(AUTH_FILE_PATH, 'w')
-      auth_file.puts(Time.new + auth_params['expires_in'].first.to_i)
-      auth_file.puts(auth_params['access_token'].first)
-      auth_file.puts(auth_params['user_id'].first)
+      auth_file.puts(auth_key)
       auth_file.close
     end
 
     def get_auth_params_from_file
-      auth_file = File.open(AUTH_FILE_PATH, 'r')
+      begin
+        auth_file = File.open(AUTH_FILE_PATH, 'r')
 
-      expires_in = auth_file.readline
-      access_token = auth_file.readline.chomp
-      auth_file.close
+        auth_key = auth_file.readline.chomp
+        auth_file.close
 
-      access_token if Time.parse(expires_in) > Time.new
+        auth_key
+      rescue
+        nil
+      end
     end
 
     def get_auth_token
-      begin
-        auth_token = get_auth_params_from_file
-        unless auth_token.nil?
+      auth_token = auth_key || get_auth_params_from_file
+
+      unless auth_token.nil?
+        if Authorizer.auth_key_valid?(auth_token)
+          save_auth_params_to_file(auth_token)
           auth_token
         else
-          raise 'The validity of the token has expired'
+          abort('Invalid authentication key')
         end
-      rescue
-        save_auth_params_to_file
-        retry
+      else
+        abort('No authentication key')
       end
     end
   end
