@@ -25,7 +25,7 @@ I think 1$ is enough for a long time (100k requests) for personal use or also yo
 ```sh
 $ vk_music_loader -id USER_OR_GROUP_ID
 $ vk_music_loader -q QUERY_SEARCH
-  [ -key' (or key, --key, -k) your_auth_key (need only enter the first time after it is saved) ]
+  [ -key (or key, --key, -k) your_auth_key (need only enter the first time after it is saved) ]
   [ -count (or count, -count, --count, c, -c, --c) count_of_songs (default: 300) ]
   [ -folder (or -folder, --folder, path, -path, --path, -p) folder_path_to_download_music (default: 'music') ]
   [ -random (or  --random, shuffle, -shuffle, --shuffle, -r) shuffle_download_flag (default: false) ]
