@@ -74,7 +74,7 @@ module VkMusicLoader
       begin
         JSON.parse(res.body)
       rescue
-        abort('Perhaps a user or group with such id does not exist')
+        abort('Perhaps a user or group with such id does not exist or limited by privacy settings')
       end
     end
 
