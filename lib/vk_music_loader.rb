@@ -25,7 +25,7 @@ module VkMusicLoader
       end
 
       if opts[:id] || opts[:query]
-        auth_token = VkMusicLoader::Authorizer.new(opts[:app]).perform
+        auth_token = VkMusicLoader::Authorizer.new(opts[:key]).perform
         VkMusicLoader::SongsDownloader.new(auth_token, opts).perform
       else
         puts 'No user id or group id or query'
